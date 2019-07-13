@@ -12,7 +12,7 @@
 #include <avr/power.h>
 
 // Comment out for a common anode display
-#define commoncathode
+#define commoncathode 0
 
 // Seven-segment definitions
 uint8_t charArray[] = {
