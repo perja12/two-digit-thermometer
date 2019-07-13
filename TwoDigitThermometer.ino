@@ -2,9 +2,9 @@
 
    David Johnson-Davies - www.technoblogy.com - 9th April 2019
    ATtiny84 @ 8 MHz (internal oscillator; BOD disabled)
-   
+
    CC BY 4.0
-   Licensed under a Creative Commons Attribution 4.0 International license: 
+   Licensed under a Creative Commons Attribution 4.0 International license:
    http://creativecommons.org/licenses/by/4.0/
 */
 
@@ -198,7 +198,7 @@ void DisplayOn (uint8_t n) {
 }
 
 // Timer/Counter0 interrupt - multiplexes display - 125Hz
-ISR(TIM0_COMPA_vect) {
+ISR(TIMER0_COMPA_vect) {
   DisplayNextDigit();
   Ticks--;
 }
@@ -229,14 +229,16 @@ void DisplayTemperature () {
 
 // Watchdog timer **********************************************
 
-// Use Watchdog for time delay; n=0 is 16ms; n=6 is 1sec ; n=9 is 8secs, 
+// Use Watchdog for time delay; n=0 is 16ms; n=6 is 1sec ; n=9 is 8secs,
 void WDDelay(int n) {
+  CCP = 0xD8;
   WDTCSR = 1<<WDIE | (n & 0x8)<<2 | (n & 0x7);
   sleep_enable();
   sleep_cpu();
 }
 
 ISR(WDT_vect) {
+  CCP = 0xD8;
   WDTCSR = 0<<WDIE;
 }
 
@@ -253,13 +255,12 @@ void setup () {
   OneWireSetup();
   //
   // Set up Timer/Counter0 to multiplex the display
-  TCCR0A = 2<<WGM00;                      // CTC mode; count up to OCR0A
-  TCCR0B = 0<<WGM02 | 4<<CS00;            // Divide by 256
-  OCR0A = 250-1;                          // Compare match at 125Hz
-  TIMSK0 = 0;                             // Interrupts initially off
-  //
-  ADCSRA &= ~(1<<ADEN);                   // Disable ADC to save power
-  PRR = 1<<PRUSI | 1<<PRADC;              // Turn off clocks to USI & ADC to save power
+  TCCR0A = 2<<WGM00;                                 // CTC mode; count up to OCR0A
+  TCCR0B = 1<<FOC0A | 1<<FOC0B | 0<<WGM02 | 4<<CS00; // Divide by 256
+  OCR0A = 250-1;                                     // Compare match at 125Hz
+  TIMSK0  |= 1<<OCIE0A;                              // Interrupts initially off
+  ADCSRA &= ~(1<<ADEN);                              // Disable ADC to save power
+  PRR = 1<<PRUSART1 | 1<<PRUSART0 | 1<<PRADC;        // Turn off clocks to USI & ADC to save power
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 }
 
